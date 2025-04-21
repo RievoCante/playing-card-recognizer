@@ -1,0 +1,117 @@
+# Product Requirements Document (PRD)
+
+## Playing-Card Recognizer (Single-Card Live Detection via Webcam)
+
+### 1. Introduction
+
+The Playing-Card Recognizer is a desktop application developed for a computer vision college class. It captures webcam frames in real-time, detects a single playing card, and identifies its rank and suit using classical computer vision techniques. An optional lightweight deep learning model (e.g., MobileNetV2) can verify the results, and CamShift tracking enhances stability. The application overlays detection results on the live feed and logs them for analysis.
+
+### 2. Objectives
+
+- Build a real-time playing card recognition system using classical computer vision methods.
+- Implement CamShift tracking to stabilize detection across frames.
+- Provide an optional deep learning verification mechanism for improved accuracy.
+- Deliver a user-friendly desktop app with live visualization and logging.
+- Ensure compatibility with macOS ad Windows.
+
+### 3. Features
+
+- **Frame Capture**: Real-time webcam input or sequential processing of images from a folder.
+- **Card Detection**: Detect a single card using edge detection and contour analysis.
+- **Perspective Transform**: Warp the detected card to a standardized 200x300 pixel image.
+- **Patch Extraction**: Extract separate rank and suit patches from the top-left corner.
+- **Rank and Suit Recognition**: Identify rank and suit using ORB keypoint matching.
+- **CamShift Tracking**: Track the card after initial detection for efficiency and stability.
+- **Deep Learning Verification (Optional)**: Use MobileNetV2 to cross-check ORB results when enabled.
+- **UI Overlay**: Display rank, suit, confidence scores, and FPS on the live feed.
+- **Logging**: Save detection results (timestamp, rank, suit, scores, FPS) to a CSV file.
+- **Command-Line Interface**: Configure options via flags (e.g., --webcam, --dl_verify).
+
+### 4. Technical Requirements
+
+#### Language and Environment
+
+- Python 3.11+
+- Environment Management: Conda (Miniconda)
+
+#### Core Libraries
+
+- opencv-python (4.9+) — Image processing and webcam handling
+- numpy — Numerical operations
+- pytest — Unit testing
+- matplotlib — Visualization of metrics (e.g., confusion matrix)
+- logging — Event logging
+- argparse — CLI parsing
+- pyinstaller — Binary packaging
+
+#### Optional Deep Learning
+
+- tensorflow (2.15) with Apple Silicon support or torch (≤2.1) with MPS support
+- Pretrained MobileNetV2 or similar lightweight model optimized for ARM
+
+#### Data
+
+- ~30 cropped card images for sanity testing
+
+### 5. Functional Requirements
+
+- Capture frames from a webcam or folder based on CLI input.
+- Detect a single playing card per frame using grayscale conversion, Gaussian blur, Canny edge detection, and contour filtering for convex quadrilaterals.
+- Warp the detected card to a 200x300 pixel image using perspective transform.
+- Extract two patches (rank and suit) from the top-left corner of the warped image.
+- Match patches against reference templates using ORB and a brute-force matcher with Lowe ratio test.
+- Implement CamShift tracking after the first detection, with fallback to full detection if tracking fails.
+- Optionally verify results with a deep learning model when enabled.
+- Overlay detection results (rank, suit, confidence, FPS) on the live feed.
+- Log results to a CSV file with columns: timestamp, rank, suit, ORB score, (DL score), FPS.
+- Support CLI toggles: --webcam, --folder <path>, --dl_verify, --track, --save_log <filename>.
+
+### 6. Non-Functional Requirements
+
+- Achieve >15 FPS on a MacBook Pro with M4 chip.
+- Handle variations in lighting, card orientation, and minor occlusions.
+- Provide clear feedback (e.g., "No card detected") when detection fails.
+- Run without internet connectivity (self-contained).
+
+### 7. Deliverables
+
+#### Source code in the specified folder structure
+
+- src/capture.py, detect_card.py, recognise_patch.py, dl_verify.py, ui_overlay.py, run.py
+- templates/ with PNGs
+- tests/ with unit and sanity tests
+- results/ for logs and metrics
+
+#### Additional Deliverables
+
+- Standalone executable for macOS and Windows via PyInstaller.
+- README with setup and usage instructions, including Conda environment setup.
+- Test reports (accuracy, FPS benchmarks on M4 chip).
+
+### 8. Testing Plan
+
+- **Unit Tests**: Test each module (capture, detection, recognition, etc.) using pytest.
+- **Sanity Tests**: Validate recognition accuracy on ~30 cropped card images.
+- **Accuracy Evaluation**: Generate a confusion matrix and CSV from batch testing.
+- **Performance Testing**: Measure FPS on a MacBook Pro with M4 chip to confirm real-time capability.
+
+### 9. Deployment
+
+- Use Conda to create a virtual environment with all required dependencies.
+- Package the application with PyInstaller into a standalone executable for macOS and Windows.
+- Include all dependencies, templates, and optional DL model weights in the bundle.
+- Test the executable on a MacBook Pro with M4 chip to ensure compatibility and performance.
+
+### 10. Constraints and Assumptions
+
+#### Constraints
+
+- Detects only one card per frame.
+- Webcam resolution must be sufficient to resolve card details.
+- Deep learning verification is optional and not required for core functionality.
+
+#### Assumptions
+
+- The card is fully visible and not heavily occluded.
+- Reference templates match the design of cards being detected.
+- Users have basic Python and Conda knowledge for development/debugging.

@@ -1,0 +1,13 @@
+name: playing-card-recognizer
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - opencv>=4.9
+  - numpy
+  - pytest
+  - matplotlib
+  - pip
+  - pip:
+    - pyinstaller
