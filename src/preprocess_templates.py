@@ -3,14 +3,15 @@
 import os
 import cv2
 import numpy as np
+from constants import RANK_BOX, SUIT_BOX
 
 # Configuration
 BASE_TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), '../templates')
 RANKS_DIR = os.path.join(BASE_TEMPLATE_DIR, 'patch/ranks')
 SUITS_DIR = os.path.join(BASE_TEMPLATE_DIR, 'patch/suits')
 OUTPUT_DIR = os.path.join(BASE_TEMPLATE_DIR, 'precomputed')
-RANK_SIZE = (90, 80)   # (width, height)  # width, height for rank patches
-SUIT_SIZE = (92, 94)   # (width, height)  # width, height for suit patches
+RANK_SIZE = (RANK_BOX[2] - RANK_BOX[0], RANK_BOX[3] - RANK_BOX[1])  # (width, height)
+SUIT_SIZE = (SUIT_BOX[2] - SUIT_BOX[0], SUIT_BOX[3] - SUIT_BOX[1])  # (width, height)
 
 VALID_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp']
 
@@ -21,25 +22,41 @@ def get_template_type_and_label(filename, ttype):
     return ttype, name
 
 
+
+
+# Preprocess template image to match extract_patches_from_full.py pipeline
 def process_image(image_path, ttype, save_png_dir=None, out_label=None):
-    """Load, grayscale, resize/crop, and adaptively threshold the template image. Optionally save as PNG for inspection."""
-    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    from constants import RANK_WIDTH, RANK_HEIGHT, SUIT_WIDTH, SUIT_HEIGHT
+    img = cv2.imread(image_path)
     if img is None:
         raise ValueError(f"Failed to load image: {image_path}")
-    # Remove resizing: assume input images are already the correct size
-    # Sanity check: warn if sizes do not match expected
-    expected_shape = RANK_SIZE[::-1] if ttype == 'rank' else SUIT_SIZE[::-1]
-    if img.shape != expected_shape:
-        print(f"[WARN] {image_path} shape {img.shape} does not match expected {expected_shape}")
-    # Adaptive thresholding
-    img_bin = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                    cv2.THRESH_BINARY_INV, 11, 2)
+    # Convert to grayscale if needed
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
+    # Gaussian blur
+    img_blur = cv2.GaussianBlur(img_gray, (5,5), 0)
+    # Fixed threshold
+    _, img_thresh = cv2.threshold(img_blur, 155, 255, cv2.THRESH_BINARY_INV)
+    # Contour detection
+    cnts, _ = cv2.findContours(img_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    if cnts:
+        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
+        x, y, w, h = cv2.boundingRect(cnts[0])
+        roi = img_thresh[y:y+h, x:x+w]
+        if ttype == 'rank':
+            img_final = cv2.resize(roi, (RANK_WIDTH, RANK_HEIGHT), interpolation=cv2.INTER_AREA)
+        else:
+            img_final = cv2.resize(roi, (SUIT_WIDTH, SUIT_HEIGHT), interpolation=cv2.INTER_AREA)
+    else:
+        # Fallback: resize the thresholded image
+        if ttype == 'rank':
+            img_final = cv2.resize(img_thresh, (RANK_WIDTH, RANK_HEIGHT), interpolation=cv2.INTER_AREA)
+        else:
+            img_final = cv2.resize(img_thresh, (SUIT_WIDTH, SUIT_HEIGHT), interpolation=cv2.INTER_AREA)
     # Optionally save as PNG for visual inspection
     if save_png_dir is not None and out_label is not None:
         os.makedirs(save_png_dir, exist_ok=True)
-        cv2.imwrite(os.path.join(save_png_dir, f"{out_label}.png"), img_bin)
-    return img_bin
-
+        cv2.imwrite(os.path.join(save_png_dir, f"{out_label}.png"), img_final)
+    return img_final
 
 def compute_orb_features(img):
     """Compute ORB keypoints and descriptors for the image."""

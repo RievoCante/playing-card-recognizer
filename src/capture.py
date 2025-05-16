@@ -1,9 +1,10 @@
+# This handles video capture from webcam or image folder
+
 import os
 import time
 import cv2 as cv
 import numpy as np
 
-# This class handles video capture from webcam or image folder
 class Capture:
     def __init__(self, source=0, folder_path=None) -> None:
         self.source = source
@@ -45,13 +46,15 @@ class Capture:
         
         # If use images from folder
         if self.image_files:
+            
             # Read from image files
             if self.current_image_index < len(self.image_files):
                 image_path = self.image_files[self.current_image_index]
                 frame = cv.imread(image_path)
                 self.current_image_index += 1
                 return frame, True # frame was successfully captured
-            else: # NOTE: revisit this
+            
+            else:
                 self.current_image_index = 0
                 if self.current_image_index < len(self.image_files):
                     image_path = self.image_files[self.current_image_index]

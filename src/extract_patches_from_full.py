@@ -3,10 +3,6 @@
 import os
 import cv2
 import numpy as np
-# Script to auto-extract rank and suit patches from full card images using fixed cropping.
-# Crops top-left for rank, just below for suit, from 500x726 images. Adjust coordinates if needed.
-import os
-import cv2
 
 FULL_DIR = os.path.join(os.path.dirname(__file__), '../templates/full')
 RANK_OUT = os.path.join(os.path.dirname(__file__), '../templates/patch/ranks')
@@ -27,9 +23,7 @@ def parse_label(filename):
     return name, ''
 
 def main(preview=False):
-    # These coordinates are for 500x726 images. Adjust as needed!
-    RANK_BOX = (0, 5, 90, 85)   # (x1, y1, x2, y2)
-    SUIT_BOX = (5, 86, 97, 180)  # (x1, y1, x2, y2)
+    from constants import RANK_BOX, SUIT_BOX
     files = [f for f in os.listdir(FULL_DIR) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp'))]
     total, extracted = 0, 0
     for fname in sorted(files):
@@ -40,16 +34,48 @@ def main(preview=False):
             continue
         gt_rank, gt_suit = parse_label(fname)
         total += 1
-        rank_patch = img[RANK_BOX[1]:RANK_BOX[3], RANK_BOX[0]:RANK_BOX[2]]
-        suit_patch = img[SUIT_BOX[1]:SUIT_BOX[3], SUIT_BOX[0]:SUIT_BOX[2]]
+        from constants import RANK_WIDTH, RANK_HEIGHT, SUIT_WIDTH, SUIT_HEIGHT
+        # Extract initial patches
+        rank_crop = img[RANK_BOX[1]:RANK_BOX[3], RANK_BOX[0]:RANK_BOX[2]]
+        suit_crop = img[SUIT_BOX[1]:SUIT_BOX[3], SUIT_BOX[0]:SUIT_BOX[2]]
+
+        # --- Refine Rank Patch ---
+        rank_gray = cv2.cvtColor(rank_crop, cv2.COLOR_BGR2GRAY) if len(rank_crop.shape) == 3 else rank_crop
+        rank_blur = cv2.GaussianBlur(rank_gray, (5,5), 0)
+        _, rank_thresh = cv2.threshold(rank_blur, 155, 255, cv2.THRESH_BINARY_INV)
+        cnts, _ = cv2.findContours(rank_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        if cnts:
+            cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
+            x, y, w, h = cv2.boundingRect(cnts[0])
+            rank_roi = rank_thresh[y:y+h, x:x+w]
+            rank_patch = cv2.resize(rank_roi, (RANK_WIDTH, RANK_HEIGHT), interpolation=cv2.INTER_AREA)
+        else:
+            rank_patch = cv2.resize(rank_thresh, (RANK_WIDTH, RANK_HEIGHT), interpolation=cv2.INTER_AREA)
+
+        # --- Refine Suit Patch ---
+        suit_gray = cv2.cvtColor(suit_crop, cv2.COLOR_BGR2GRAY) if len(suit_crop.shape) == 3 else suit_crop
+        suit_blur = cv2.GaussianBlur(suit_gray, (5,5), 0)
+        _, suit_thresh = cv2.threshold(suit_blur, 155, 255, cv2.THRESH_BINARY_INV)
+        cnts, _ = cv2.findContours(suit_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        if cnts:
+            cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
+            x, y, w, h = cv2.boundingRect(cnts[0])
+            suit_roi = suit_thresh[y:y+h, x:x+w]
+            suit_patch = cv2.resize(suit_roi, (SUIT_WIDTH, SUIT_HEIGHT), interpolation=cv2.INTER_AREA)
+        else:
+            suit_patch = cv2.resize(suit_thresh, (SUIT_WIDTH, SUIT_HEIGHT), interpolation=cv2.INTER_AREA)
+
         if preview:
             # Show preview for debugging
             preview_img = img.copy()
-            # cv2.rectangle(preview_img, (RANK_BOX[0], RANK_BOX[1]), (RANK_BOX[2], RANK_BOX[3]), (0,255,0), 2)
+            cv2.rectangle(preview_img, (RANK_BOX[0], RANK_BOX[1]), (RANK_BOX[2], RANK_BOX[3]), (0,255,0), 2)
             cv2.rectangle(preview_img, (SUIT_BOX[0], SUIT_BOX[1]), (SUIT_BOX[2], SUIT_BOX[3]), (255,0,0), 2)
             cv2.imshow("Preview", preview_img)
-            # cv2.imshow("Rank Patch", rank_patch)
-            cv2.imshow("Suit Patch", suit_patch)
+            cv2.moveWindow("Preview", 100, 100)
+            cv2.imshow("Refined Rank Patch", rank_patch)
+            cv2.moveWindow("Refined Rank Patch", 650, 100)
+            cv2.imshow("Refined Suit Patch", suit_patch)
+            cv2.moveWindow("Refined Suit Patch", 1200, 100)
             print(f"Previewing {fname}. Press any key for next, or 'q' to quit.")
             k = cv2.waitKey(0)
             if k == ord('q'):
