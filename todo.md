@@ -38,16 +38,16 @@
 
 ## 2. Data Collection and Preparation
 
-- [ ] Collect reference playing card templates:
+- [x] ~~_Collect reference playing card templates:_~~ [2025-04-21]
 
-  - [ ] 13 rank templates (Ace through King)
-  - [ ] 4 suit templates (Hearts, Diamonds, Clubs, Spades)
+  - [x] ~~_13 rank templates (Ace through King)_~~ [2025-04-21]
+  - [x] ~~_4 suit templates (Hearts, Diamonds, Clubs, Spades)_~~ [2025-04-21]
 
 - [ ] Preprocess reference templates:
 
-  - [ ] Crop to include only the rank/suit symbol
+  - [x] ~~_Crop to include only the rank/suit symbol_~~ [2025-04-21]
   - [ ] Resize to standardized dimensions
-  - [ ] Save as PNGs in templates/ directory
+  - [x] ~~_Save as PNGs in templates/ directory_~~ [2025-04-21]
 
 - [ ] Prepare test dataset:
   - [ ] Capture or collect ~30 cropped card images for testing
@@ -57,9 +57,9 @@
 
 ### 3.1 Frame Capture Module (`capture.py`)
 
-- [ ] Implement webcam frame capture functionality
-- [ ] Add support for reading images from a folder
-- [ ] Create a generic frame provider class with common interface
+- [x] ~~_Implement webcam frame capture functionality_~~ [2025-04-23]
+- [x] ~~_Add support for reading images from a folder_~~ [2025-04-23]
+- [x] ~~_Create a generic frame provider class with common interface_~~ [2025-04-23]
 
 ### 3.2 Card Detection Module (`detect_card.py`)
 
@@ -156,3 +156,10 @@
 - [ ] Add support for different card designs
 - [ ] Create a graphical user interface
 - [ ] Implement real-time statistics for poker hand evaluation
+
+Start with capture.py to get the webcam input working
+Then implement card detection in detect_card.py
+Collect reference templates for the templates/ directory
+Implement recognition in recognise_patch.py
+Add the UI overlay and tracking functionality
+Finally, integrate everything in run.py

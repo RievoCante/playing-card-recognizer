@@ -1,28 +1,26 @@
 # Playing Card Recognizer
 
-A real-time playing card recognition system using classical computer vision methods with optional deep learning verification.
+A real-time playing card recognition system using classical computer vision methods.
 
 ## Description
 
-This application captures webcam frames in real-time, detects a single playing card, and identifies its rank and suit using classical computer vision techniques. It includes CamShift tracking for stability and an optional lightweight deep learning model for verification.
+This application captures webcam frames or processes images from a folder, detects a single playing card, and identifies its rank and suit using classical computer vision techniques. The pipeline includes card detection via edge and contour analysis, perspective transformation, patch extraction, and ORB-based feature matching. CamShift tracking is included for improved runtime efficiency.
 
 ## Features
 
 - Real-time webcam input or sequential processing of images
-- Edge detection and contour analysis for card detection
+- Card detection using edge detection and contour analysis
 - Perspective transform to standardize card images
+- Patch extraction for rank and suit
 - ORB keypoint matching for rank and suit recognition
-- CamShift tracking for efficiency and stability
-- Optional deep learning verification
-- Live UI overlay with detection results
+- CamShift tracking for stability (optional)
 - Logging of detection results to CSV file
 
 ## Installation
 
 ### Prerequisites
-
 - Python 3.11+
-- Conda (Miniconda)
+- Conda (Miniconda recommended)
 
 ### Setup Environment
 
@@ -33,26 +31,16 @@ conda activate playing-card-recognizer
 
 # Install dependencies
 conda install -c conda-forge opencv numpy pytest matplotlib
-pip install pyinstaller
 ```
 
 ## Usage
 
+All scripts are located in the `src/` folder.
+
+### 1. Preprocess Templates
+Generate and preprocess templates for rank and suit patches:
 ```bash
-# Run with webcam input
-python src/run.py --webcam
-
-# Run with images from a folder
-python src/run.py --folder path/to/images
-
-# Run with deep learning verification
-python src/run.py --webcam --dl_verify
-
-# Run with tracking enabled
-python src/run.py --webcam --track
-
-# Save detection logs
-python src/run.py --webcam --save_log results/detection_log.csv
+python src/preprocess_templates.py
 ```
 
 ## Project Structure

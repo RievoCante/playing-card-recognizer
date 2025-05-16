@@ -29,3 +29,11 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Additional
+todo.md
+.windsurfrules
+
+debug_images/
+tests/
+results/
